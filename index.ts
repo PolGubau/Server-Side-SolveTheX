@@ -4,9 +4,12 @@ const express=require('express');
 const app=express();
 const sqlite3=require('sqlite3').verbose();
 const path=require('path');
+var cors = require('cors')
+
 const jwt = require('jsonwebtoken');
 import { isANumber, isAString } from './services/typeChecker';
 
+app.use(cors())
 
 app.use(express.json());
 
@@ -41,19 +44,23 @@ app.post('/auth',(req:any,res:any)=>{
     const username = req.body.username
     const user={name:username}
     const accesToken= jwt.sign(user, process.env.ACCESS_TOKEN_SECRET)
-    res.json({accesToken:accesToken})
+    console.log('Token got: ',accesToken)
+        res.json({status:'ok',data:accesToken});
 
+    return ;
 });
 
 function authenticateToken(req: { headers: { [x: string]: any; }; user: any; },res: { sendStatus: (arg0: number) => any; },next: () => void){
-    const authHeader= req.headers['authorization']
-    const token = authHeader && authHeader.split(' ')[1]
+    const token= req.headers['authorization']
+    // const token = authHeader && authHeader.split(' ')[1]
+    // console.log('Received by backend to check token: ',authHeader)
     if(token==null) return res.sendStatus(401)
     jwt.verify(token,process.env.ACCESS_TOKEN_SECRET,(err:any,user:any)=>{
         if(err) return res.sendStatus(403)
         req.user=user
         next()
     })
+    return
 }
 
 
@@ -63,9 +70,10 @@ function authenticateToken(req: { headers: { [x: string]: any; }; user: any; },r
 app.get('/',authenticateToken,(req:any,res:any)=>{
 
     // solamente podrás acceder si ya tienes un token
-    if(!req.user){
-        res.sendStatus(401);
-    }
+    // if(!req.user){
+    //     res.sendStatus(401);
+    // return
+    // }
         
 
 //haremos una consulta a la base de datos
@@ -75,8 +83,9 @@ db.all(sql,[],(err:any,rows:any)=>{
         throw err;
     }
     res.json({status:'ok',data:rows});
-    
-});
+
+});    return;
+
 });
 
 // waypoint para obtener un producto por su ID
@@ -92,12 +101,13 @@ app.get('/:id',authenticateToken,(_req:any,res:any)=>{
             res.json(row);
         }
     }
-    );
+    );    return;
+
 });
 
 // waypoint para insertar un dato en la base de datos
-app.post('/insert',authenticateToken,(_req:any,res:any)=>{
-    const sql='INSERT INTO products(name,stock) VALUES(?,?)';
+app.post('/',authenticateToken,(_req:any,res:any)=>{
+    const sql='INSERT INTO products(name,stock) VALUES(?,?) RETURNING *';
     const name = _req.body.name
     const stock = _req.body.stock
     
@@ -117,7 +127,8 @@ app.post('/insert',authenticateToken,(_req:any,res:any)=>{
         }else{
             res.json({status:'ok'});
         }
-    });
+    });    return;
+
 });
 
 // waypoint para actualizar un dato en la base de datos
@@ -130,7 +141,8 @@ app.put('/:id',authenticateToken,(_req:any,res:any)=>{
         }else{
             res.json({status:'ok'});
         }
-    });
+    });    return;
+
 }
 );
 
@@ -145,6 +157,7 @@ app.delete('/:id',authenticateToken,(_req:any,res:any)=>{
             res.json({status:'ok'});
         }
     });
+    return;
 }
 );
 
