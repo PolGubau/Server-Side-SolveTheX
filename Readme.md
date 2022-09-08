@@ -1,6 +1,6 @@
 # SolveTheX Server-Side 
 
-Backend and Api part of a complete challenge from [SolveTheX](https://solvethex.com/) 
+Backend y API parte del reto de [SolveTheX](https://solvethex.com/) 
 
 ## Getting Started
 
