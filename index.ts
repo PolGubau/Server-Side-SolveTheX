@@ -1,4 +1,7 @@
 // Dependencias que necesitaremos en nuestra API
+
+// 1. Se reclaman los modulos necesarios, así como la configuración de CORS, el paquete de jwt, y el servidor de express.
+
 require('dotenv').config();
 const express=require('express');
 const app=express();
@@ -6,12 +9,18 @@ const sqlite3=require('sqlite3').verbose();
 const path=require('path');
 var cors = require('cors')
 
+// 2. Se ejecutan las configuraciones de CORS y el servidor de express.
+
+
 const jwt = require('jsonwebtoken');
 import { isANumber, isAString } from './services/typeChecker';
 
 app.use(cors())
 
 app.use(express.json());
+
+
+// 3. Se crea una base de datos siempre que no exista llamado y te conecta a ella.
 
 const db_name=path.join(__dirname,'db','database.db');
 const db=new sqlite3.Database(db_name,(err: { message: any; })=>{
@@ -36,9 +45,8 @@ db.run(sql_create,(err: { message: any; })=>{
     }
 });
 
-// Enrutamiento 
+// 4. Endpoint de auth, que recibe un usuario y devuelve un token de acceso.
 
-// Ruta para acceder al JWT
 
 app.post('/auth',(req:any,res:any)=>{
     const username = req.body.username
@@ -49,6 +57,8 @@ app.post('/auth',(req:any,res:any)=>{
 
     return ;
 });
+
+// 5. function que verifica el token de acceso, será llamada en cada endpoint que requiera autenticación.
 
 function authenticateToken(req: { headers: { [x: string]: any; }; user: any; },res: { sendStatus: (arg0: number) => any; },next: () => void){
     const token= req.headers['authorization']
@@ -64,17 +74,12 @@ function authenticateToken(req: { headers: { [x: string]: any; }; user: any; },r
 }
 
 
+// 6. Endpoint de devulta de todos los registros, requiere autenticación.
 
 
-// waypoint para obtener todos los productos
+// endpoint para obtener todos los productos
 app.get('/',authenticateToken,(req:any,res:any)=>{
 
-    // solamente podrás acceder si ya tienes un token
-    // if(!req.user){
-    //     res.sendStatus(401);
-    // return
-    // }
-        
 
 //haremos una consulta a la base de datos
 const sql='SELECT * FROM products';
@@ -88,7 +93,9 @@ db.all(sql,[],(err:any,rows:any)=>{
 
 });
 
-// waypoint para obtener un producto por su ID
+// 7. Endpoint de devuelta de un solo registro, requiere un ID cogido de la url, requiere autenticación.
+
+// endpoint para obtener un producto por su ID
 
 app.get('/:id',authenticateToken,(_req:any,res:any)=>{
     //usaermos el id para hacer una consulta a la base de datos
@@ -105,7 +112,9 @@ app.get('/:id',authenticateToken,(_req:any,res:any)=>{
 
 });
 
-// waypoint para insertar un dato en la base de datos
+// 8. endpoint de creación de un registro, requiere un json con el name y stock y un token de autenticación.
+
+// endpoint para insertar un dato en la base de datos
 app.post('/',authenticateToken,(_req:any,res:any)=>{
     const sql='INSERT INTO products(name,stock) VALUES(?,?) RETURNING *';
     const name = _req.body.name
@@ -131,7 +140,9 @@ app.post('/',authenticateToken,(_req:any,res:any)=>{
 
 });
 
-// waypoint para actualizar un dato en la base de datos
+// 9. Endpoint de actualización de un registro, requiere un json con el name y stock y un token de autenticación.
+
+// endpoint para actualizar un dato en la base de datos
 app.put('/:id',authenticateToken,(_req:any,res:any)=>{
     const id=_req.params.id;
     const sql='UPDATE products SET name=?,stock=? WHERE id=?';
@@ -146,7 +157,10 @@ app.put('/:id',authenticateToken,(_req:any,res:any)=>{
 }
 );
 
-//waypoint para eliminar un dato de la base de datos
+// 10. Endpoint de eliminación de un registro, requiere un ID cogido de la url y un token de autenticación.
+
+
+//endpoint para eliminar un dato de la base de datos
 app.delete('/:id',authenticateToken,(_req:any,res:any)=>{
     const id=_req.params.id;
     const sql='DELETE FROM products WHERE id=?';
